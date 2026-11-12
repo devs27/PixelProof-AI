@@ -1,34 +1,118 @@
 {% extends "base.html" %}
-{% block title %}History — PixelProof AI{% endblock %}
+{% block title %}Audit Log — PixelProof AI{% endblock %}
 {% block content %}
-<div class="page-header"><h1 class="page-title">☰ SCAN HISTORY</h1><a href="{{ url_for('scan') }}" class="btn-primary">⚡ NEW SCAN</a></div>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">☰ AUDIT LOG &amp; FORENSIC LEDGER</h1>
+    <p class="mono dim" style="font-size:11px; margin-top:4px;">
+      Comprehensive historical audit of all synthetic media scans.
+    </p>
+  </div>
+  <a href="{{ url_for('scan') }}" class="btn-primary">⚡ INITIATE SCAN</a>
+</div>
+
 <div class="panel">
-  <div class="panel-header"><span class="panel-icon">☰</span><h2>ALL SCANS</h2><span class="panel-count">{{ scans|length }} records</span></div>
+  <div class="panel-header" style="flex-wrap:wrap; gap:12px;">
+    <span class="panel-icon">☰</span>
+    <h2>HISTORICAL SCAN ARCHIVE</h2>
+    <span class="panel-count">{{ scans|length }} total records</span>
+
+    <div style="display:flex; gap:8px; margin-left:auto; align-items:center; flex-wrap:wrap;">
+      <input type="text" id="history-search" placeholder="Search audit records…" 
+             style="background:var(--bg); border:1px solid var(--border); padding:5px 10px; border-radius:4px; color:var(--text); font-family:'Share Tech Mono',monospace; font-size:11px; outline:none;"/>
+      
+      <div style="display:flex; gap:4px;">
+        <button type="button" class="tbl-btn" onclick="filterHistory('all')">ALL</button>
+        <button type="button" class="tbl-btn" onclick="filterHistory('Fake')">THREATS</button>
+        <button type="button" class="tbl-btn" onclick="filterHistory('Real')">CLEAN</button>
+      </div>
+    </div>
+  </div>
+
   <div class="panel-body pad-0">
     {% if scans %}
-    <table class="scan-table">
-      <thead><tr><th>#</th><th>FILE</th><th>VERDICT</th><th>CONFIDENCE</th><th>STATUS</th><th>TIME</th><th>ACTIONS</th></tr></thead>
-      <tbody>{% for s in scans %}
-        <tr>
-          <td class="mono dim">{{ s.id }}</td>
-          <td class="mono">{{ s.filename[:22] }}…</td>
-          <td><span class="badge {% if s.label=='Fake' %}badge-danger{% else %}badge-safe{% endif %}">{{ s.label.upper() }}</span></td>
-          <td>
-            <div class="mini-bar-wrap"><div class="mini-bar {% if s.label=='Fake' %}bar-danger{% else %}bar-safe{% endif %}" style="width:{{ (s.confidence*100)|round(0)|int }}%"></div></div>
-            <span class="mono dim">{{ (s.confidence*100)|round(1) }}%</span>
-          </td>
-          <td>{% if s.locked %}<span class="badge badge-locked">🔒 LOCKED</span>{% else %}<span class="badge badge-clear">✓ CLEAR</span>{% endif %}</td>
-          <td class="mono dim">{{ s.scanned_at[:16] }}</td>
-          <td><div style="display:flex;gap:6px">
-            <a href="{{ url_for('result', scan_id=s.id) }}" class="tbl-btn">REPORT</a>
-            <form method="POST" action="{{ url_for('delete_scan', scan_id=s.id) }}" onsubmit="return confirm('Delete scan #{{ s.id }}?')">
-              <button class="tbl-btn tbl-btn-danger">DEL</button>
-            </form>
-          </div></td>
-        </tr>{% endfor %}
-      </tbody>
-    </table>
-    {% else %}<div class="empty-state"><div style="font-size:40px;opacity:.3;margin-bottom:12px">🛡</div><p>No scans yet. <a href="{{ url_for('scan') }}">Start scanning →</a></p></div>{% endif %}
+      <table class="scan-table" id="history-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>TARGET FILENAME</th>
+            <th>VERDICT</th>
+            <th>CONFIDENCE</th>
+            <th>ENFORCEMENT</th>
+            <th>SCANNED TIMESTAMP</th>
+            <th>ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in scans %}
+          <tr data-label="{{ s.label }}">
+            <td class="mono dim">#{{ s.id }}</td>
+            <td class="mono" title="{{ s.filename }}">{{ s.filename[:24] }}…</td>
+            <td>
+              <span class="badge {% if s.label=='Fake' %}badge-danger{% else %}badge-safe{% endif %}">
+                {{ s.label.upper() }}
+              </span>
+            </td>
+            <td>
+              <div class="mini-bar-wrap">
+                <div class="mini-bar {% if s.label=='Fake' %}bar-danger{% else %}bar-safe{% endif %}" 
+                     style="width:{{ (s.confidence*100)|round(0)|int }}%"></div>
+              </div>
+              <span class="mono dim" style="font-size:10px;">{{ (s.confidence*100)|round(1) }}%</span>
+            </td>
+            <td>
+              {% if s.locked %}
+                <span class="badge badge-locked">🔒 QUARANTINED</span>
+              {% else %}
+                <span class="badge badge-clear">✓ APPROVED</span>
+              {% endif %}
+            </td>
+            <td class="mono dim" style="font-size:11px;">{{ s.scanned_at[:19] }} UTC</td>
+            <td>
+              <div style="display:flex; gap:6px;">
+                <a href="{{ url_for('result', scan_id=s.id) }}" class="tbl-btn">REPORT</a>
+                <form method="POST" action="{{ url_for('delete_scan', scan_id=s.id) }}" onsubmit="return confirm('Permanently delete scan record #{{ s.id }}?')">
+                  <button type="submit" class="tbl-btn tbl-btn-danger">DEL</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty-state">
+        <div style="font-size:48px; opacity:.3; margin-bottom:12px">🛡️</div>
+        <p>No historical records found.</p>
+        <p style="margin-top:8px"><a href="{{ url_for('scan') }}">Upload and scan an image →</a></p>
+      </div>
+    {% endif %}
   </div>
 </div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function filterHistory(filter) {
+  const rows = document.querySelectorAll('#history-table tbody tr');
+  rows.forEach(row => {
+    if (filter === 'all' || row.dataset.label === filter) {
+      row.style.display = '';
+    } else {
+      row.style.display = 'none';
+    }
+  });
+}
+
+document.getElementById('history-search')?.addEventListener('input', function(e) {
+  const term = e.target.value.toLowerCase();
+  const rows = document.querySelectorAll('#history-table tbody tr');
+  rows.forEach(row => {
+    const text = row.innerText.toLowerCase();
+    row.style.display = text.includes(term) ? '' : 'none';
+  });
+});
+</script>
 {% endblock %}

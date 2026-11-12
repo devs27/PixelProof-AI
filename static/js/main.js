@@ -1,21 +1,25 @@
 /* PixelProof AI — main.js */
 
-// Auth tab switching
 document.addEventListener("DOMContentLoaded", () => {
-  const tabs = document.querySelectorAll(".auth-tab");
-  tabs.forEach(tab => {
-    tab.addEventListener("click", () => {
-      tabs.forEach(t => t.classList.remove("active"));
-      tab.classList.add("active");
-      const target = tab.dataset.tab;
-      document.querySelectorAll(".auth-form").forEach(f => f.classList.add("hidden"));
-      const form = document.getElementById(`form-${target}`);
-      if (form) form.classList.remove("hidden");
-    });
-  });
+  // Live UTC Clock in Footer
+  function updateClock() {
+    const clockEl = document.getElementById("utc-clock");
+    if (clockEl) {
+      const now = new Date();
+      const utcString = now.toISOString().replace("T", " ").substring(0, 19) + " UTC";
+      clockEl.textContent = utcString;
+    }
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
 
-  // Auto-hide flash messages after 4s
+  // Auto-hide flash notifications after 4.5 seconds
   document.querySelectorAll(".flash").forEach(el => {
-    setTimeout(() => { el.style.opacity = "0"; el.style.transition = "opacity 0.5s"; }, 4000);
+    setTimeout(() => {
+      el.style.opacity = "0";
+      el.style.transform = "translateY(-8px)";
+      el.style.transition = "opacity 0.4s ease, transform 0.4s ease";
+      setTimeout(() => el.remove(), 400);
+    }, 4500);
   });
 });

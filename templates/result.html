@@ -1,107 +1,267 @@
 {% extends "base.html" %}
-{% block title %}Report #{{ scan.id }} — PixelProof AI{% endblock %}
+{% block title %}Threat Report #{{ scan.id }} — PixelProof AI{% endblock %}
 {% block content %}
+
 <div class="page-header">
-  <h1 class="page-title">{% if scan.label=='Fake' %}⚠{% else %}✓{% endif %} THREAT REPORT <span class="dim">#{{ scan.id }}</span></h1>
-  <a href="{{ url_for('scan') }}" class="btn-outline">⚡ NEW SCAN</a>
+  <h1 class="page-title">
+    {% if scan.label=='Fake' %}
+      <span style="color:var(--danger);">⚠</span> FORENSIC REPORT <span class="dim">#{{ scan.id }}</span>
+    {% else %}
+      <span style="color:var(--safe);">✓</span> VERIFICATION REPORT <span class="dim">#{{ scan.id }}</span>
+    {% endif %}
+  </h1>
+  
+  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <button type="button" class="btn-outline" onclick="copyReportSummary()">📋 COPY SUMMARY</button>
+    <button type="button" class="btn-outline" onclick="window.print()">🖨️ PRINT / PDF</button>
+    <a href="{{ url_for('scan') }}" class="btn-primary">⚡ NEW SCAN</a>
+  </div>
 </div>
+
 <div class="result-grid">
+  <!-- Left Column: Verdict & Image with Interactive Heatmap Overlay -->
   <div>
-    <div class="verdict-card {% if scan.label=='Fake' %}verdict-fake{% else %}verdict-real{% endif %} panel">
+    <!-- Verdict Banner -->
+    <div class="verdict-card {% if scan.label=='Fake' %}verdict-fake{% else %}verdict-real{% endif %}">
       <div class="verdict-label">
-        {% if scan.label=='Fake' %}<span style="font-size:28px">⚠</span> DEEPFAKE DETECTED
-        {% else %}<span style="font-size:28px">✓</span> IMAGE AUTHENTIC{% endif %}
+        {% if scan.label=='Fake' %}
+          <span>⚠</span> DEEPFAKE DETECTED
+        {% else %}
+          <span>✓</span> IMAGE AUTHENTIC
+        {% endif %}
       </div>
+      
       {% set pct = (scan.confidence*100)|round(2) %}
-      <div class="conf-row"><span class="conf-label-text">CONFIDENCE</span><span class="conf-value">{{ pct }}%</span></div>
+      <div class="conf-row">
+        <span class="conf-label-text">MODEL CONFIDENCE</span>
+        <span class="conf-value {% if scan.label=='Fake' %}danger{% else %}safe{% endif %}">{{ pct }}%</span>
+      </div>
+      
       <div class="conf-bar-wrap">
-        <div class="conf-bar {% if scan.label=='Fake' %}bar-danger{% else %}bar-safe{% endif %}" style="width:0%" data-width="{{ pct }}"></div>
+        <div class="conf-bar {% if scan.label=='Fake' %}bar-danger{% else %}bar-safe{% endif %}" style="width:{{ pct }}%"></div>
       </div>
-      {% if scan.locked %}<div class="risk-badge risk-critical">● RISK: CRITICAL</div>
-      {% elif scan.label=='Fake' %}<div class="risk-badge risk-high">● RISK: HIGH</div>
-      {% else %}<div class="risk-badge risk-clear">● RISK: CLEAR</div>{% endif %}
+      
+      {% if scan.locked %}
+        <div class="risk-badge risk-critical">● RISK: CRITICAL · QUARANTINE LOCKDOWN ENFORCED</div>
+      {% elif scan.label=='Fake' %}
+        <div class="risk-badge risk-high">● RISK: HIGH · SUSPECTED MANIPULATION</div>
+      {% else %}
+        <div class="risk-badge risk-clear">● RISK: CLEAR · NATURAL SENSOR DISTRIBUTION</div>
+      {% endif %}
     </div>
-    <div class="panel" style="margin-top:16px">
-      <div class="panel-header"><span class="panel-icon">◈</span><h2>IMAGE PREVIEW</h2>
-        {% if scan.locked %}<span class="badge badge-locked" style="margin-left:auto">🔒 LOCKED</span>{% endif %}
+
+    <!-- Image Viewer with Interactive Overlay Tabs -->
+    <div class="panel" style="margin-top: 20px;">
+      <div class="panel-header">
+        <span class="panel-icon">◈</span>
+        <h2>INSPECTED IMAGE TARGET</h2>
+        {% if scan.locked %}
+          <span class="badge badge-locked" style="margin-left:auto">🔒 QUARANTINED</span>
+        {% else %}
+          <span class="badge badge-safe" style="margin-left:auto">✓ APPROVED</span>
+        {% endif %}
       </div>
+      
       <div class="panel-body">
-        <div class="result-img-wrap {% if scan.locked %}locked-wrap{% endif %}">
-          {% if scan.locked %}
-            <img src="{{ url_for('serve_preview', filename=scan.preview_filename) }}" class="result-img"/>
-            <div class="lock-overlay"><div class="lock-msg">🔒 ORIGINAL ACCESS DENIED</div><div class="lock-sub">Download disabled by security policy</div></div>
-          {% else %}
-            <img src="{{ url_for('serve_image', filename=scan.filename) }}" class="result-img"/>
-          {% endif %}
+        <!-- View Mode Switcher -->
+        <div class="view-mode-tabs">
+          <button type="button" class="view-tab active" id="tab-standard" onclick="setViewMode('standard')">🖼️ Standard View</button>
+          <button type="button" class="view-tab" id="tab-overlay" onclick="setViewMode('overlay')">🔥 Heatmap Overlay View</button>
         </div>
-        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:8px">FILE: {{ scan.filename }}</div>
+
+        <div class="image-viewer-container {% if scan.locked %}locked-wrap{% endif %}" id="viewer-container">
+          <!-- Main Image -->
+          {% if scan.locked %}
+            <img src="{{ url_for('serve_preview', filename=scan.preview_filename) }}" class="image-viewer-img" id="inspected-img" alt="Quarantined Preview"/>
+            <div class="lock-overlay" id="lock-overlay-msg">
+              <div class="lock-msg">🔒 ORIGINAL ACCESS DENIED</div>
+              <div class="lock-sub">Download disabled by security policy (Confidence ≥ 90%)</div>
+            </div>
+          {% else %}
+            <img src="{{ url_for('serve_image', filename=scan.filename) }}" class="image-viewer-img" id="inspected-img" alt="Authentic Image"/>
+          {% endif %}
+
+          <!-- Interactive 4x4 Heatmap Overlay Grid -->
+          <div class="heatmap-overlay-grid" id="heatmap-overlay-grid">
+            {% for score in patch_scores %}
+              {% if score > 0.75 %}
+                {% set bg = "rgba(255, 51, 102, 0.7)" %}
+              {% elif score > 0.5 %}
+                {% set bg = "rgba(255, 183, 3, 0.65)" %}
+              {% elif score > 0.25 %}
+                {% set bg = "rgba(0, 240, 255, 0.45)" %}
+              {% else %}
+                {% set bg = "rgba(14, 19, 31, 0.5)" %}
+              {% endif %}
+              <div class="heat-overlay-cell" style="background: {{ bg }};">
+                {{ (score*100)|round(0)|int }}%
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; margin-top:10px; font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--text-dim);">
+          <span>FILE: {{ scan.filename }}</span>
+          <span>{% if scan.locked %}STATUS: ENCRYPTED PREVIEW{% else %}STATUS: UNRESTRICTED{% endif %}</span>
+        </div>
       </div>
     </div>
   </div>
+
+  <!-- Right Column: Enforcement, Spatial Heatmap & Metadata -->
   <div>
-    <div class="panel" style="margin-bottom:16px">
-      <div class="panel-header"><span class="panel-icon">🛡</span><h2>SECURITY ENFORCEMENT</h2></div>
+    <!-- Security Enforcement -->
+    <div class="panel" style="margin-bottom: 20px;">
+      <div class="panel-header">
+        <span class="panel-icon">🛡</span>
+        <h2>ACTIVE SECURITY ENFORCEMENT</h2>
+      </div>
       <div class="panel-body">
         <div class="enforce-grid">
           {% set lk = scan.locked %}
           <div class="enforce-chip {% if lk %}chip-active{% else %}chip-off{% endif %}">🔒 Original Blocked</div>
-          <div class="enforce-chip {% if lk %}chip-active{% else %}chip-off{% endif %}">💧 Watermark Applied</div>
-          <div class="enforce-chip {% if lk %}chip-active{% else %}chip-off{% endif %}">🚫 Download Disabled</div>
-          <div class="enforce-chip {% if lk %}chip-active{% else %}chip-off{% endif %}">🗃 Cache Cleared</div>
-          <div class="enforce-chip {% if lk %}chip-active{% else %}chip-off{% endif %}">👤 User Traced</div>
-          <div class="enforce-chip {% if not lk %}chip-safe{% else %}chip-off{% endif %}">✓ Access Allowed</div>
+          <div class="enforce-chip {% if lk %}chip-active{% else %}chip-off{% endif %}">💧 Forensic Watermark</div>
+          <div class="enforce-chip {% if lk %}chip-active{% else %}chip-off{% endif %}">🚫 Download Restricted (403)</div>
+          <div class="enforce-chip {% if lk %}chip-active{% else %}chip-off{% endif %}">👤 Public Audit Stamped</div>
+          <div class="enforce-chip {% if not lk %}chip-safe{% else %}chip-off{% endif %}">✓ Direct Access Permitted</div>
         </div>
+        
         {% if lk %}
-        <div class="enforce-note danger-note">⚠ Lock condition met: Fake AND Confidence ≥ 90%<br>Original image denied. Watermarked preview only.</div>
+          <div class="enforce-note danger-note">
+            <strong>⚠ Quarantine Condition Triggered:</strong> Classified as <code>Fake</code> with confidence $\ge 90\%$. Raw file access is terminated to prevent synthetic propagation.
+          </div>
         {% else %}
-        <div class="enforce-note safe-note">✓ No enforcement. Image classified as {{ scan.label }} with {{ (scan.confidence*100)|round(1) }}% confidence.</div>
+          <div class="enforce-note safe-note">
+            <strong>✓ Clean Verification:</strong> Image verified as <code>{{ scan.label }}</code> with {{ (scan.confidence*100)|round(1) }}% confidence. Full resolution original served.
+          </div>
         {% endif %}
       </div>
     </div>
-    <div class="panel" style="margin-bottom:16px">
-      <div class="panel-header"><span class="panel-icon">◉</span><h2>VIT ATTENTION HEATMAP</h2></div>
+
+    <!-- 4x4 Attention Heatmap Grid -->
+    <div class="panel" style="margin-bottom: 20px;">
+      <div class="panel-header">
+        <span class="panel-icon">◉</span>
+        <h2>SPATIAL ATTENTION HEATMAP (4×4)</h2>
+      </div>
       <div class="panel-body">
-        <p style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);margin-bottom:10px">Patch anomaly scores · 4×4 image regions</p>
+        <p class="mono dim" style="font-size:11px; margin-bottom:12px">
+          Patch anomaly coefficients across 16 regional subdivisions:
+        </p>
+        
         <div class="heatmap-grid">
           {% for score in patch_scores %}
-            {% if score>0.75 %}{% set cls="heat-critical" %}
-            {% elif score>0.5 %}{% set cls="heat-high" %}
-            {% elif score>0.25 %}{% set cls="heat-med" %}
-            {% else %}{% set cls="heat-low" %}{% endif %}
-            <div class="heat-cell {{ cls }}">{{ (score*100)|round(0)|int }}%</div>
-          {% else %}{% for i in range(16) %}<div class="heat-cell heat-low">—</div>{% endfor %}{% endfor %}
+            {% if score > 0.75 %}
+              {% set cls = "heat-critical" %}
+            {% elif score > 0.5 %}
+              {% set cls = "heat-high" %}
+            {% elif score > 0.25 %}
+              {% set cls = "heat-med" %}
+            {% else %}
+              {% set cls = "heat-low" %}
+            {% endif %}
+            <div class="heat-cell {{ cls }}" title="Patch #{{ loop.index }}: {{ (score*100)|round(1) }}% anomaly">
+              {{ (score*100)|round(0)|int }}%
+            </div>
+          {% else %}
+            {% for i in range(16) %}
+              <div class="heat-cell heat-low">—</div>
+            {% endfor %}
+          {% endfor %}
         </div>
-        <div class="heat-legend"><span class="hl-safe">■ LOW</span><span class="hl-med">■ MED</span><span class="hl-high">■ HIGH</span><span class="hl-crit">■ CRITICAL</span></div>
+        
+        <div class="heat-legend">
+          <span style="color:var(--text-dim);">■ LOW (&lt;25%)</span>
+          <span style="color:var(--accent);">■ MED (25-50%)</span>
+          <span style="color:var(--warn);">■ HIGH (50-75%)</span>
+          <span style="color:var(--danger);">■ CRITICAL (&gt;75%)</span>
+        </div>
       </div>
     </div>
+
+    <!-- Scan Metadata -->
     <div class="panel">
-      <div class="panel-header"><span class="panel-icon">☰</span><h2>SCAN METADATA</h2></div>
+      <div class="panel-header">
+        <span class="panel-icon">☰</span>
+        <h2>AUDIT LOG METADATA</h2>
+      </div>
       <div class="panel-body">
-        <div class="info-row"><span class="info-label">SCAN ID</span><span class="info-val mono">#{{ scan.id }}</span></div>
-        <div class="info-row"><span class="info-label">SCANNED AT</span><span class="info-val mono">{{ scan.scanned_at[:19] }} UTC</span></div>
-        <div class="info-row"><span class="info-label">MODEL</span><span class="info-val accent">ViT-B/16</span></div>
-        <div class="info-row"><span class="info-label">THRESHOLD</span><span class="info-val warn">90%</span></div>
-        <div class="info-row"><span class="info-label">LABEL</span><span class="info-val {% if scan.label=='Fake' %}danger{% else %}safe{% endif %}">{{ scan.label.upper() }}</span></div>
-        <div class="info-row"><span class="info-label">CONFIDENCE</span><span class="info-val">{{ (scan.confidence*100)|round(2) }}%</span></div>
-        <div class="info-row"><span class="info-label">LOCKED</span><span class="info-val {% if scan.locked %}danger{% else %}safe{% endif %}">{{ 'YES' if scan.locked else 'NO' }}</span></div>
-        <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+        <div class="info-row">
+          <span class="info-label">SCAN RECORD ID</span>
+          <span class="info-val mono accent">#{{ scan.id }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">ANALYSIS TIMESTAMP</span>
+          <span class="info-val mono">{{ scan.scanned_at[:19] }} UTC</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">INSPECTION ENGINE</span>
+          <span class="info-val accent">ViT-B/16 Self-Attention</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">VERDICT LABEL</span>
+          <span class="info-val {% if scan.label=='Fake' %}danger{% else %}safe{% endif %}">
+            {{ scan.label.upper() }}
+          </span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">CONFIDENCE RATING</span>
+          <span class="info-val mono">{{ (scan.confidence*100)|round(2) }}%</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">QUARANTINE ENFORCED</span>
+          <span class="info-val {% if scan.locked %}danger{% else %}safe{% endif %}">
+            {{ 'YES (HTTP 403 ACTIVE)' if scan.locked else 'NO (ACCESS GRANTED)' }}
+          </span>
+        </div>
+
+        <div style="margin-top: 18px; display:flex; justify-content:space-between; align-items:center;">
           <a href="{{ url_for('dashboard') }}" class="btn-outline">← DASHBOARD</a>
-          <form method="POST" action="{{ url_for('delete_scan', scan_id=scan.id) }}" onsubmit="return confirm('Delete this scan?')">
-            <button type="submit" class="btn-danger-sm">🗑 DELETE</button>
+          <form method="POST" action="{{ url_for('delete_scan', scan_id=scan.id) }}" onsubmit="return confirm('Permanently delete scan #{{ scan.id }}?')">
+            <button type="submit" class="btn-danger-sm">🗑 DELETE RECORD</button>
           </form>
         </div>
       </div>
     </div>
   </div>
 </div>
+
 {% endblock %}
+
 {% block extra_scripts %}
 <script>
-document.addEventListener("DOMContentLoaded",()=>{
-  document.querySelectorAll(".conf-bar").forEach(b=>{
-    const w=b.dataset.width; b.style.width="0%";
-    setTimeout(()=>{ b.style.transition="width 1.2s cubic-bezier(.22,1,.36,1)"; b.style.width=w+"%"; },100);
+function setViewMode(mode) {
+  const overlay = document.getElementById('heatmap-overlay-grid');
+  const lockMsg = document.getElementById('lock-overlay-msg');
+  const tabStandard = document.getElementById('tab-standard');
+  const tabOverlay = document.getElementById('tab-overlay');
+
+  if (mode === 'overlay') {
+    overlay.classList.add('visible');
+    if (lockMsg) lockMsg.style.display = 'none';
+    tabOverlay.classList.add('active');
+    tabStandard.classList.remove('active');
+  } else {
+    overlay.classList.remove('visible');
+    if (lockMsg) lockMsg.style.display = 'flex';
+    tabStandard.classList.add('active');
+    tabOverlay.classList.remove('active');
+  }
+}
+
+function copyReportSummary() {
+  const summary = `[PixelProof AI Forensic Report]
+Scan ID: #{{ scan.id }}
+Verdict: {{ scan.label.upper() }}
+Confidence: {{ (scan.confidence*100)|round(2) }}%
+Quarantine Locked: {{ 'YES (HTTP 403)' if scan.locked else 'NO' }}
+Timestamp: {{ scan.scanned_at[:19] }} UTC`;
+
+  navigator.clipboard.writeText(summary).then(() => {
+    alert("Report summary copied to clipboard!");
+  }).catch(() => {
+    prompt("Copy report summary:", summary);
   });
-});
+}
 </script>
 {% endblock %}

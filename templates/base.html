@@ -1,41 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>{% block title %}PixelProof AI{% endblock %}</title>
-  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@600;700&family=Exo+2:wght@400;600;800&display=swap" rel="stylesheet">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>{% block title %}PixelProof AI — Deepfake Defense & Forensics{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@500;600;700;800&family=Exo+2:wght@300;400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
   {% block extra_head %}{% endblock %}
 </head>
 <body>
 <div class="scanlines"></div>
+
 <nav class="navbar">
   <div class="nav-brand">
-    <a href="{{ url_for('scan') }}" style="text-decoration:none; color:inherit; display:flex; align-items:center; gap:8px;">
-      <span>🛡</span><span class="nav-title">PIXELPROOF <span class="av">AI</span></span>
+    <a href="{{ url_for('scan') }}" style="text-decoration:none; color:inherit; display:flex; align-items:center; gap:10px;">
+      <span class="brand-icon">🛡️</span>
+      <span class="nav-title">PIXELPROOF <span class="av">AI</span></span>
     </a>
   </div>
+  
   <div class="nav-links">
-    <a href="{{ url_for('scan') }}"      class="nav-link {% if request.endpoint in ['scan', 'home'] %}active{% endif %}">⚡ SCAN TARGET</a>
-    <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint=='dashboard' %}active{% endif %}">◈ THREAT DASHBOARD</a>
-    <a href="{{ url_for('history') }}"   class="nav-link {% if request.endpoint=='history'   %}active{% endif %}">☰ AUDIT LOG</a>
+    <a href="{{ url_for('scan') }}" class="nav-link {% if request.endpoint in ['scan', 'home'] %}active{% endif %}">
+      <span>⚡</span> SCAN TARGET
+    </a>
+    <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint=='dashboard' %}active{% endif %}">
+      <span>◈</span> THREAT DASHBOARD
+    </a>
+    <a href="{{ url_for('history') }}" class="nav-link {% if request.endpoint=='history' %}active{% endif %}">
+      <span>☰</span> AUDIT LOG
+    </a>
   </div>
+  
   <div class="nav-right">
-    <span class="nav-user" style="color:#00e676; font-size:11px; display:flex; align-items:center; gap:6px;">
-      <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#00e676;box-shadow:0 0 8px #00e676;"></span>
-      SYSTEM ACTIVE · PUBLIC ACCESS
-    </span>
+    <div class="status-pill">
+      <span class="pulse-dot"></span>
+      <span>SYSTEM ACTIVE · ZERO-AUTH</span>
+    </div>
   </div>
 </nav>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}<div class="flash-container">{% for cat, msg in messages %}
-    <div class="flash flash-{{ cat }}">{% if cat=='danger' %}⚠{% elif cat=='success' %}✓{% else %}ℹ{% endif %} {{ msg }}</div>
-  {% endfor %}</div>{% endif %}
+  {% if messages %}
+    <div class="flash-container">
+      {% for cat, msg in messages %}
+        <div class="flash flash-{{ cat }}">
+          {% if cat=='danger' %}⚠{% elif cat=='success' %}✓{% else %}ℹ{% endif %} {{ msg }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
 {% endwith %}
 
-<main class="main-content">{% block content %}{% endblock %}</main>
-<footer class="footer">PixelProof AI · ViT-B/16 Forensic Engine · Accuracy 98.0% · Threshold 90% · Policy STRICT · Public Sandbox</footer>
+<main class="main-content">
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+  <div>
+    <strong>PixelProof AI</strong> · Autonomous Deepfake Quarantine &amp; Explainable Vision Forensics Framework
+  </div>
+  <div style="margin-top:6px; color:var(--text-dim); font-size:10px;">
+    ViT-B/16 Multi-Head Self-Attention Engine · Quarantine Lockdown Policy: STRICT (≥ 90%) · <span id="utc-clock">UTC TIME</span>
+  </div>
+</footer>
+
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 {% block extra_scripts %}{% endblock %}
 </body>

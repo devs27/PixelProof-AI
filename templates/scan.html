@@ -1,70 +1,140 @@
 {% extends "base.html" %}
-{% block title %}Scan — PixelProof AI{% endblock %}
+{% block title %}Scanner — PixelProof AI{% endblock %}
 {% block content %}
-<div class="page-header"><h1 class="page-title">⚡ SCAN IMAGE</h1></div>
+
+<div class="hero-header">
+  <div class="hero-badge">
+    <span class="pulse-dot"></span> ZERO-AUTH PUBLIC SCANNER
+  </div>
+  <h1 class="hero-title">Autonomous Deepfake &amp; Synthetic Media Defense</h1>
+  <p class="hero-subtitle">
+    Upload any image or choose a pre-loaded sample below to analyze spatial frequencies, detect generative artifacts, and preview automated quarantine watermarking in real time.
+  </p>
+</div>
+
 <div class="scan-grid">
+  <!-- Left Column: Upload & Presets -->
   <div class="panel">
-    <div class="panel-header"><span class="panel-icon">↑</span><h2>UPLOAD TARGET</h2></div>
+    <div class="panel-header">
+      <span class="panel-icon">↑</span>
+      <h2>IMAGE INGESTION TARGET</h2>
+    </div>
     <div class="panel-body">
       <form id="scan-form" method="POST" action="{{ url_for('scan') }}" enctype="multipart/form-data">
+        
+        <!-- Drag & Drop Zone -->
         <div class="drop-zone" id="drop-zone">
           <input type="file" name="image" id="file-input" accept=".jpg,.jpeg,.png,.webp" required/>
-          <div style="font-size:40px;margin-bottom:10px">🛡</div>
-          <h3>DROP IMAGE HERE</h3>
-          <p style="color:var(--text-dim);font-size:12px;margin-top:4px">or click to browse</p>
-          <p style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:8px">JPG · PNG · WEBP · Max 16MB</p>
-        </div>
-        <div id="preview-wrap" class="hidden" style="margin-top:14px;border-radius:8px;overflow:hidden">
-          <img id="preview-img" src="" style="width:100%;max-height:200px;object-fit:cover;display:block;border-radius:8px"/>
-          <div id="preview-name" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);margin-top:6px"></div>
+          <div class="drop-zone-icon">🛡️</div>
+          <h3>DRAG &amp; DROP IMAGE HERE</h3>
+          <p>or click to browse from your device</p>
+          <p class="mono dim" style="font-size:10px; margin-top:8px">Supports JPG, PNG, WEBP · Max 16 MB</p>
         </div>
 
-        <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed rgba(255,255,255,0.15);">
-          <div style="font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--text-dim); margin-bottom:8px">TEST WITH SAMPLE DATA:</div>
-          <div style="display:flex; gap:8px">
-            <button type="button" class="btn-outline" style="flex:1; font-size:11px; padding:6px 8px" onclick="loadSample('deepfake')">⚠ Load Deepfake</button>
-            <button type="button" class="btn-outline" style="flex:1; font-size:11px; padding:6px 8px" onclick="loadSample('authentic')">✓ Load Authentic</button>
+        <!-- Selected Preview Card -->
+        <div id="preview-wrap" class="scan-preview-card hidden">
+          <img id="preview-img" class="scan-preview-img" src="" alt="Selected Target"/>
+          <div class="scan-preview-meta">
+            <span id="preview-name" class="mono">file.jpg</span>
+            <button type="button" class="btn-outline" style="padding:2px 8px; font-size:10px;" onclick="resetFileInput()">✕ CHANGE</button>
           </div>
         </div>
 
-        <button type="submit" class="btn-primary full-width" id="scan-btn" style="margin-top:16px" disabled>
-          <span id="btn-text">⚡ INITIATE SCAN</span>
-          <span id="btn-loading" class="hidden">◌ SCANNING…</span>
+        <!-- Sample Presets -->
+        <div style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--border);">
+          <div style="font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--text-dim); margin-bottom:8px; display:flex; justify-content:space-between;">
+            <span>⚡ ONE-CLICK TEST PRESETS:</span>
+            <span style="color:var(--accent);">CLICK TO LOAD</span>
+          </div>
+          
+          <div class="sample-presets-grid">
+            <!-- Deepfake Preset -->
+            <div class="sample-card" onclick="loadSample('deepfake')">
+              <img src="{{ url_for('static', filename='samples/sample_deepfake.jpg') }}" class="sample-thumb" alt="Deepfake Thumbnail"/>
+              <div class="sample-info">
+                <span class="sample-title" style="color:var(--danger)">⚠ Deepfake Sample</span>
+                <span class="sample-desc">Synthetic Artifacts</span>
+              </div>
+            </div>
+
+            <!-- Authentic Preset -->
+            <div class="sample-card" onclick="loadSample('authentic')">
+              <img src="{{ url_for('static', filename='samples/sample_authentic.jpg') }}" class="sample-thumb" alt="Authentic Thumbnail"/>
+              <div class="sample-info">
+                <span class="sample-title" style="color:var(--safe)">✓ Authentic Sample</span>
+                <span class="sample-desc">Natural Sensor Noise</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn-primary full-width" id="scan-btn" style="margin-top:20px" disabled>
+          <span id="btn-text">⚡ INITIATE FORENSIC SCAN</span>
+          <span id="btn-loading" class="hidden">◌ SCANNING &amp; ANALYZING PATCHES…</span>
         </button>
       </form>
     </div>
   </div>
+
+  <!-- Right Column: Model Specs & Pipeline -->
   <div>
-    <div class="panel" style="margin-bottom:16px">
-      <div class="panel-header"><span class="panel-icon">◈</span><h2>ENGINE STATUS</h2></div>
+    <div class="panel" style="margin-bottom: 20px;">
+      <div class="panel-header">
+        <span class="panel-icon">◈</span>
+        <h2>INSPECTION ENGINE TELEMETRY</h2>
+      </div>
       <div class="panel-body">
-        <div class="info-row"><span class="info-label">MODEL</span><span class="info-val accent">ViT-B/16</span></div>
-        <div class="info-row"><span class="info-label">PARAMETERS</span><span class="info-val">86M</span></div>
-        <div class="info-row"><span class="info-label">ACCURACY</span><span class="info-val safe">98.0%</span></div>
-        <div class="info-row"><span class="info-label">PRECISION</span><span class="info-val safe">97.5%</span></div>
-        <div class="info-row"><span class="info-label">RECALL</span><span class="info-val safe">98.2%</span></div>
-        <div class="info-row"><span class="info-label">F1 SCORE</span><span class="info-val safe">97.8%</span></div>
-        <div class="info-row"><span class="info-label">LOCK THRESHOLD</span><span class="info-val warn">≥ 90% CONFIDENCE</span></div>
+        <div class="info-row">
+          <span class="info-label">PRIMARY ARCHITECTURE</span>
+          <span class="info-val accent">Vision Transformer (ViT-B/16)</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">SPATIAL PATCH MATRIX</span>
+          <span class="info-val">196 Patches (14×14) → 4×4 Heatmap</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">TRAINED MODEL ACCURACY</span>
+          <span class="info-val safe">98.0%</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">MODEL PRECISION / RECALL</span>
+          <span class="info-val safe">97.5% / 98.2%</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">AUTOMATED LOCK THRESHOLD</span>
+          <span class="info-val warn">≥ 90.0% CONFIDENCE</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">LOCK ENFORCEMENT</span>
+          <span class="info-val danger">HTTP 403 Forbidden + Watermark</span>
+        </div>
       </div>
     </div>
+
     <div class="panel">
-      <div class="panel-header"><span class="panel-icon">▶</span><h2>SCAN PIPELINE</h2></div>
+      <div class="panel-header">
+        <span class="panel-icon">▶</span>
+        <h2>REAL-TIME PIPELINE MONITOR</h2>
+      </div>
       <div class="panel-body">
         <ol class="pipeline-list" id="pipeline">
-          <li class="pipeline-step" data-step="0">Validate file type &amp; sanitize filename</li>
-          <li class="pipeline-step" data-step="1">Store with UUID — prevent path traversal</li>
-          <li class="pipeline-step" data-step="2">Resize to 224×224 &amp; normalize pixels</li>
-          <li class="pipeline-step" data-step="3">Extract patch embeddings + positional encoding</li>
-          <li class="pipeline-step" data-step="4">Multi-head self-attention (12 layers)</li>
-          <li class="pipeline-step" data-step="5">Softmax → confidence score</li>
-          <li class="pipeline-step" data-step="6">Policy engine: Fake AND conf ≥ 90%?</li>
-          <li class="pipeline-step" data-step="7">Watermark &amp; lock OR allow access</li>
+          <li class="pipeline-step" data-step="0">File format validation &amp; UUID cryptographic sanitization</li>
+          <li class="pipeline-step" data-step="1">Dynamic serverless storage path assignment</li>
+          <li class="pipeline-step" data-step="2">Spatial normalization (224×224) &amp; patch grid decomposition</li>
+          <li class="pipeline-step" data-step="3">Discrete Laplacian gradient calculation &amp; color dispersion</li>
+          <li class="pipeline-step" data-step="4">Multi-head self-attention feature projection</li>
+          <li class="pipeline-step" data-step="5">Softmax calibrated probability estimation</li>
+          <li class="pipeline-step" data-step="6">Quarantine check: Fake label AND confidence ≥ 90%?</li>
+          <li class="pipeline-step" data-step="7">Access authorization OR irreversible watermark generation</li>
         </ol>
       </div>
     </div>
   </div>
 </div>
+
 {% endblock %}
+
 {% block extra_scripts %}
 <script src="{{ url_for('static', filename='js/scan.js') }}"></script>
 <script>
@@ -76,7 +146,7 @@ async function loadSample(type) {
   try {
     const response = await fetch(url);
     const blob = await response.blob();
-    const fname = type === 'deepfake' ? 'sample_fake_0.jpg' : 'sample_real_0.jpg';
+    const fname = type === 'deepfake' ? 'sample_deepfake_target.jpg' : 'sample_authentic_target.jpg';
     const file = new File([blob], fname, { type: 'image/jpeg' });
     const dataTransfer = new DataTransfer();
     dataTransfer.items.add(file);
@@ -85,8 +155,16 @@ async function loadSample(type) {
     fileInput.files = dataTransfer.files;
     fileInput.dispatchEvent(new Event('change', { bubbles: true }));
   } catch (err) {
-    console.error("Error loading sample:", err);
+    console.error("Failed to load sample preset:", err);
   }
+}
+
+function resetFileInput() {
+  const fileInput = document.getElementById('file-input');
+  fileInput.value = '';
+  document.getElementById('preview-wrap').classList.add('hidden');
+  document.getElementById('drop-zone').classList.remove('hidden');
+  document.getElementById('scan-btn').disabled = true;
 }
 </script>
 {% endblock %}
