@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>{% block title %}PixelProof AI{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@600;700&family=Exo+2:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+<div class="scanlines"></div>
+<nav class="navbar">
+  <div class="nav-brand">
+    <a href="{{ url_for('scan') }}" style="text-decoration:none; color:inherit; display:flex; align-items:center; gap:8px;">
+      <span>🛡</span><span class="nav-title">PIXELPROOF <span class="av">AI</span></span>
+    </a>
+  </div>
+  <div class="nav-links">
+    <a href="{{ url_for('scan') }}"      class="nav-link {% if request.endpoint in ['scan', 'home'] %}active{% endif %}">⚡ SCAN TARGET</a>
+    <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint=='dashboard' %}active{% endif %}">◈ THREAT DASHBOARD</a>
+    <a href="{{ url_for('history') }}"   class="nav-link {% if request.endpoint=='history'   %}active{% endif %}">☰ AUDIT LOG</a>
+  </div>
+  <div class="nav-right">
+    <span class="nav-user" style="color:#00e676; font-size:11px; display:flex; align-items:center; gap:6px;">
+      <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#00e676;box-shadow:0 0 8px #00e676;"></span>
+      SYSTEM ACTIVE · PUBLIC ACCESS
+    </span>
+  </div>
+</nav>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}<div class="flash-container">{% for cat, msg in messages %}
+    <div class="flash flash-{{ cat }}">{% if cat=='danger' %}⚠{% elif cat=='success' %}✓{% else %}ℹ{% endif %} {{ msg }}</div>
+  {% endfor %}</div>{% endif %}
+{% endwith %}
+
+<main class="main-content">{% block content %}{% endblock %}</main>
+<footer class="footer">PixelProof AI · ViT-B/16 Forensic Engine · Accuracy 98.0% · Threshold 90% · Policy STRICT · Public Sandbox</footer>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

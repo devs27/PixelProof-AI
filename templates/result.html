@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Report #{{ scan.id }} — PixelProof AI{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">{% if scan.label=='Fake' %}⚠{% else %}✓{% endif %} THREAT REPORT <span class="dim">#{{ scan.id }}</span></h1>
+  <a href="{{ url_for('scan') }}" class="btn-outline">⚡ NEW SCAN</a>
+</div>
+<div class="result-grid">
+  <div>
+    <div class="verdict-card {% if scan.label=='Fake' %}verdict-fake{% else %}verdict-real{% endif %} panel">
+      <div class="verdict-label">
+        {% if scan.label=='Fake' %}<span style="font-size:28px">⚠</span> DEEPFAKE DETECTED
+        {% else %}<span style="font-size:28px">✓</span> IMAGE AUTHENTIC{% endif %}
+      </div>
+      {% set pct = (scan.confidence*100)|round(2) %}
+      <div class="conf-row"><span class="conf-label-text">CONFIDENCE</span><span class="conf-value">{{ pct }}%</span></div>
+      <div class="conf-bar-wrap">
+        <div class="conf-bar {% if scan.label=='Fake' %}bar-danger{% else %}bar-safe{% endif %}" style="width:0%" data-width="{{ pct }}"></div>
+      </div>
+      {% if scan.locked %}<div class="risk-badge risk-critical">● RISK: CRITICAL</div>
+      {% elif scan.label=='Fake' %}<div class="risk-badge risk-high">● RISK: HIGH</div>
+      {% else %}<div class="risk-badge risk-clear">● RISK: CLEAR</div>{% endif %}
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <div class="panel-header"><span class="panel-icon">◈</span><h2>IMAGE PREVIEW</h2>
+        {% if scan.locked %}<span class="badge badge-locked" style="margin-left:auto">🔒 LOCKED</span>{% endif %}
+      </div>
+      <div class="panel-body">
+        <div class="result-img-wrap {% if scan.locked %}locked-wrap{% endif %}">
+          {% if scan.locked %}
+            <img src="{{ url_for('serve_preview', filename=scan.preview_filename) }}" class="result-img"/>
+            <div class="lock-overlay"><div class="lock-msg">🔒 ORIGINAL ACCESS DENIED</div><div class="lock-sub">Download disabled by security policy</div></div>
+          {% else %}
+            <img src="{{ url_for('serve_image', filename=scan.filename) }}" class="result-img"/>
+          {% endif %}
+        </div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:8px">FILE: {{ scan.filename }}</div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="panel" style="margin-bottom:16px">
+      <div class="panel-header"><span class="panel-icon">🛡</span><h2>SECURITY ENFORCEMENT</h2></div>
+      <div class="panel-body">
+        <div class="enforce-grid">
+          {% set lk = scan.locked %}
+          <div class="enforce-chip {% if lk %}chip-active{% else %}chip-off{% endif %}">🔒 Original Blocked</div>
+          <div class="enforce-chip {% if lk %}chip-active{% else %}chip-off{% endif %}">💧 Watermark Applied</div>
+          <div class="enforce-chip {% if lk %}chip-active{% else %}chip-off{% endif %}">🚫 Download Disabled</div>
+          <div class="enforce-chip {% if lk %}chip-active{% else %}chip-off{% endif %}">🗃 Cache Cleared</div>
+          <div class="enforce-chip {% if lk %}chip-active{% else %}chip-off{% endif %}">👤 User Traced</div>
+          <div class="enforce-chip {% if not lk %}chip-safe{% else %}chip-off{% endif %}">✓ Access Allowed</div>
+        </div>
+        {% if lk %}
+        <div class="enforce-note danger-note">⚠ Lock condition met: Fake AND Confidence ≥ 90%<br>Original image denied. Watermarked preview only.</div>
+        {% else %}
+        <div class="enforce-note safe-note">✓ No enforcement. Image classified as {{ scan.label }} with {{ (scan.confidence*100)|round(1) }}% confidence.</div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="panel" style="margin-bottom:16px">
+      <div class="panel-header"><span class="panel-icon">◉</span><h2>VIT ATTENTION HEATMAP</h2></div>
+      <div class="panel-body">
+        <p style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);margin-bottom:10px">Patch anomaly scores · 4×4 image regions</p>
+        <div class="heatmap-grid">
+          {% for score in patch_scores %}
+            {% if score>0.75 %}{% set cls="heat-critical" %}
+            {% elif score>0.5 %}{% set cls="heat-high" %}
+            {% elif score>0.25 %}{% set cls="heat-med" %}
+            {% else %}{% set cls="heat-low" %}{% endif %}
+            <div class="heat-cell {{ cls }}">{{ (score*100)|round(0)|int }}%</div>
+          {% else %}{% for i in range(16) %}<div class="heat-cell heat-low">—</div>{% endfor %}{% endfor %}
+        </div>
+        <div class="heat-legend"><span class="hl-safe">■ LOW</span><span class="hl-med">■ MED</span><span class="hl-high">■ HIGH</span><span class="hl-crit">■ CRITICAL</span></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><span class="panel-icon">☰</span><h2>SCAN METADATA</h2></div>
+      <div class="panel-body">
+        <div class="info-row"><span class="info-label">SCAN ID</span><span class="info-val mono">#{{ scan.id }}</span></div>
+        <div class="info-row"><span class="info-label">SCANNED AT</span><span class="info-val mono">{{ scan.scanned_at[:19] }} UTC</span></div>
+        <div class="info-row"><span class="info-label">MODEL</span><span class="info-val accent">ViT-B/16</span></div>
+        <div class="info-row"><span class="info-label">THRESHOLD</span><span class="info-val warn">90%</span></div>
+        <div class="info-row"><span class="info-label">LABEL</span><span class="info-val {% if scan.label=='Fake' %}danger{% else %}safe{% endif %}">{{ scan.label.upper() }}</span></div>
+        <div class="info-row"><span class="info-label">CONFIDENCE</span><span class="info-val">{{ (scan.confidence*100)|round(2) }}%</span></div>
+        <div class="info-row"><span class="info-label">LOCKED</span><span class="info-val {% if scan.locked %}danger{% else %}safe{% endif %}">{{ 'YES' if scan.locked else 'NO' }}</span></div>
+        <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+          <a href="{{ url_for('dashboard') }}" class="btn-outline">← DASHBOARD</a>
+          <form method="POST" action="{{ url_for('delete_scan', scan_id=scan.id) }}" onsubmit="return confirm('Delete this scan?')">
+            <button type="submit" class="btn-danger-sm">🗑 DELETE</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+document.addEventListener("DOMContentLoaded",()=>{
+  document.querySelectorAll(".conf-bar").forEach(b=>{
+    const w=b.dataset.width; b.style.width="0%";
+    setTimeout(()=>{ b.style.transition="width 1.2s cubic-bezier(.22,1,.36,1)"; b.style.width=w+"%"; },100);
+  });
+});
+</script>
+{% endblock %}

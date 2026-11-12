@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — PixelProof AI{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">◈ THREAT DASHBOARD</h1>
+  <a href="{{ url_for('scan') }}" class="btn-primary">⚡ NEW SCAN</a>
+</div>
+<div class="stats-row">
+  <div class="stat-card"><div class="stat-value accent">{{ stats.total or 0 }}</div><div class="stat-label">TOTAL SCANNED</div></div>
+  <div class="stat-card"><div class="stat-value danger">{{ stats.threats or 0 }}</div><div class="stat-label">THREATS DETECTED</div></div>
+  <div class="stat-card"><div class="stat-value warn">{{ stats.quarantined or 0 }}</div><div class="stat-label">QUARANTINED</div></div>
+  <div class="stat-card">
+    {% set total = [stats.total or 1, 1] | max %}
+    {% set clean = total - (stats.threats or 0) %}
+    <div class="stat-value safe">{{ ((clean/total)*100)|round(0)|int }}%</div>
+    <div class="stat-label">CLEAN RATE</div>
+  </div>
+</div>
+<div class="panel">
+  <div class="panel-header"><span class="panel-icon">☰</span><h2>RECENT SCAN LOG</h2><a href="{{ url_for('history') }}" class="panel-link">VIEW ALL →</a></div>
+  <div class="panel-body pad-0">
+    {% if scans %}
+    <table class="scan-table">
+      <thead><tr><th>#</th><th>FILE</th><th>VERDICT</th><th>CONFIDENCE</th><th>STATUS</th><th>TIME</th><th>ACTION</th></tr></thead>
+      <tbody>
+        {% for s in scans %}
+        <tr>
+          <td class="mono dim">{{ s.id }}</td>
+          <td class="mono">{{ s.filename[:20] }}…</td>
+          <td><span class="badge {% if s.label=='Fake' %}badge-danger{% else %}badge-safe{% endif %}">{{ s.label.upper() }}</span></td>
+          <td>
+            <div class="mini-bar-wrap"><div class="mini-bar {% if s.label=='Fake' %}bar-danger{% else %}bar-safe{% endif %}" style="width:{{ (s.confidence*100)|round(0)|int }}%"></div></div>
+            <span class="mono dim">{{ (s.confidence*100)|round(1) }}%</span>
+          </td>
+          <td>{% if s.locked %}<span class="badge badge-locked">🔒 LOCKED</span>{% else %}<span class="badge badge-clear">✓ CLEAR</span>{% endif %}</td>
+          <td class="mono dim">{{ s.scanned_at[:16] }}</td>
+          <td><a href="{{ url_for('result', scan_id=s.id) }}" class="tbl-btn">REPORT</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state"><div style="font-size:40px;opacity:.3;margin-bottom:12px">🛡</div><p>No scans yet. <a href="{{ url_for('scan') }}">Upload your first image →</a></p></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

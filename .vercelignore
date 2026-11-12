@@ -1,0 +1,17 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.safetensors
+*.pth
+*.bin
+models/
+outputlog.txt
+*.db
+.git/
+.vscode/
+.idea/
+static/uploads/*
+!static/uploads/.gitkeep
+static/previews/*
+!static/previews/.gitkeep

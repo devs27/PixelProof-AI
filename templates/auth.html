@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}PixelProof AI — Login{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div style="font-size:52px;margin-bottom:8px">🛡</div>
+      <h1 class="auth-title">PIXELPROOF <span>AI</span></h1>
+      <p class="auth-sub">DEEPFAKE THREAT DETECTION ENGINE v2.0</p>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-tab="login">LOGIN</button>
+      <button class="auth-tab" data-tab="register">REGISTER</button>
+    </div>
+    <form class="auth-form" id="form-login" method="POST" action="/">
+      <input type="hidden" name="action" value="login"/>
+      <div class="form-group"><label class="form-label">USERNAME</label><input class="form-input" type="text" name="username" value="demo" required/></div>
+      <div class="form-group"><label class="form-label">PASSWORD</label><input class="form-input" type="password" name="password" value="demo123" required/></div>
+      <button class="btn-primary" type="submit">⚡ ACCESS SYSTEM</button>
+    </form>
+    <form class="auth-form hidden" id="form-register" method="POST" action="/">
+      <input type="hidden" name="action" value="register"/>
+      <div class="form-group"><label class="form-label">USERNAME</label><input class="form-input" type="text" name="username" required/></div>
+      <div class="form-group"><label class="form-label">PASSWORD</label><input class="form-input" type="password" name="password" required/></div>
+      <button class="btn-primary" type="submit">◉ CREATE ACCOUNT</button>
+    </form>
+    <div style="margin-top: 12px; text-align: center;">
+      <button type="button" class="btn-outline" style="font-size: 11px; padding: 6px 12px; width: 100%" onclick="quickDemo()">⚡ ONE-CLICK DEMO LOGIN (demo / demo123)</button>
+    </div>
+    <div class="auth-footer"><span class="dot-safe"></span> System Active · ViT-B/16 Ready · v2.0</div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function quickDemo() {
+  document.querySelector('#form-login input[name="username"]').value = 'demo';
+  document.querySelector('#form-login input[name="password"]').value = 'demo123';
+  document.getElementById('form-login').submit();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Scan — PixelProof AI{% endblock %}
+{% block content %}
+<div class="page-header"><h1 class="page-title">⚡ SCAN IMAGE</h1></div>
+<div class="scan-grid">
+  <div class="panel">
+    <div class="panel-header"><span class="panel-icon">↑</span><h2>UPLOAD TARGET</h2></div>
+    <div class="panel-body">
+      <form id="scan-form" method="POST" action="{{ url_for('scan') }}" enctype="multipart/form-data">
+        <div class="drop-zone" id="drop-zone">
+          <input type="file" name="image" id="file-input" accept=".jpg,.jpeg,.png,.webp" required/>
+          <div style="font-size:40px;margin-bottom:10px">🛡</div>
+          <h3>DROP IMAGE HERE</h3>
+          <p style="color:var(--text-dim);font-size:12px;margin-top:4px">or click to browse</p>
+          <p style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:8px">JPG · PNG · WEBP · Max 16MB</p>
+        </div>
+        <div id="preview-wrap" class="hidden" style="margin-top:14px;border-radius:8px;overflow:hidden">
+          <img id="preview-img" src="" style="width:100%;max-height:200px;object-fit:cover;display:block;border-radius:8px"/>
+          <div id="preview-name" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);margin-top:6px"></div>
+        </div>
+
+        <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed rgba(255,255,255,0.15);">
+          <div style="font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--text-dim); margin-bottom:8px">TEST WITH SAMPLE DATA:</div>
+          <div style="display:flex; gap:8px">
+            <button type="button" class="btn-outline" style="flex:1; font-size:11px; padding:6px 8px" onclick="loadSample('deepfake')">⚠ Load Deepfake</button>
+            <button type="button" class="btn-outline" style="flex:1; font-size:11px; padding:6px 8px" onclick="loadSample('authentic')">✓ Load Authentic</button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary full-width" id="scan-btn" style="margin-top:16px" disabled>
+          <span id="btn-text">⚡ INITIATE SCAN</span>
+          <span id="btn-loading" class="hidden">◌ SCANNING…</span>
+        </button>
+      </form>
+    </div>
+  </div>
+  <div>
+    <div class="panel" style="margin-bottom:16px">
+      <div class="panel-header"><span class="panel-icon">◈</span><h2>ENGINE STATUS</h2></div>
+      <div class="panel-body">
+        <div class="info-row"><span class="info-label">MODEL</span><span class="info-val accent">ViT-B/16</span></div>
+        <div class="info-row"><span class="info-label">PARAMETERS</span><span class="info-val">86M</span></div>
+        <div class="info-row"><span class="info-label">ACCURACY</span><span class="info-val safe">98.0%</span></div>
+        <div class="info-row"><span class="info-label">PRECISION</span><span class="info-val safe">97.5%</span></div>
+        <div class="info-row"><span class="info-label">RECALL</span><span class="info-val safe">98.2%</span></div>
+        <div class="info-row"><span class="info-label">F1 SCORE</span><span class="info-val safe">97.8%</span></div>
+        <div class="info-row"><span class="info-label">LOCK THRESHOLD</span><span class="info-val warn">≥ 90% CONFIDENCE</span></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><span class="panel-icon">▶</span><h2>SCAN PIPELINE</h2></div>
+      <div class="panel-body">
+        <ol class="pipeline-list" id="pipeline">
+          <li class="pipeline-step" data-step="0">Validate file type &amp; sanitize filename</li>
+          <li class="pipeline-step" data-step="1">Store with UUID — prevent path traversal</li>
+          <li class="pipeline-step" data-step="2">Resize to 224×224 &amp; normalize pixels</li>
+          <li class="pipeline-step" data-step="3">Extract patch embeddings + positional encoding</li>
+          <li class="pipeline-step" data-step="4">Multi-head self-attention (12 layers)</li>
+          <li class="pipeline-step" data-step="5">Softmax → confidence score</li>
+          <li class="pipeline-step" data-step="6">Policy engine: Fake AND conf ≥ 90%?</li>
+          <li class="pipeline-step" data-step="7">Watermark &amp; lock OR allow access</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/scan.js') }}"></script>
+<script>
+async function loadSample(type) {
+  const url = type === 'deepfake' 
+    ? '{{ url_for("static", filename="samples/sample_deepfake.jpg") }}' 
+    : '{{ url_for("static", filename="samples/sample_authentic.jpg") }}';
+  
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const fname = type === 'deepfake' ? 'sample_fake_0.jpg' : 'sample_real_0.jpg';
+    const file = new File([blob], fname, { type: 'image/jpeg' });
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(file);
+    
+    const fileInput = document.getElementById('file-input');
+    fileInput.files = dataTransfer.files;
+    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+  } catch (err) {
+    console.error("Error loading sample:", err);
+  }
+}
+</script>
+{% endblock %}
