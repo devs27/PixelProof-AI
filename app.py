@@ -8,9 +8,15 @@ from utils.db import init_db, get_db
 from utils.detector import predict_image
 from utils.watermark import apply_watermark
 
-app = Flask(__name__)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+STATIC_DIR = os.path.join(BASE_DIR, "static")
+
+app = Flask(
+    __name__,
+    static_folder=STATIC_DIR,
+    static_url_path="/static"
+)
 app.secret_key = os.environ.get("SECRET_KEY", "pixelproof-ai-public-key-2026")
-BASE_DIR       = os.path.dirname(os.path.abspath(__file__))
 
 # Resilient storage path resolution for local dev & Vercel serverless
 def _resolve_storage():
@@ -43,6 +49,14 @@ app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXT
 
+# Fallback route for static files to guarantee 100% availability on serverless
+@app.route("/static/<path:filename>")
+def serve_static(filename):
+    target = os.path.join(STATIC_DIR, filename)
+    if os.path.exists(target):
+        return send_file(target)
+    abort(404)
+
 # Primary route: Direct scanner (No login required)
 @app.route("/", methods=["GET", "POST"])
 def scan():
@@ -50,7 +64,7 @@ def scan():
         return render_template("scan.html")
         
     if "image" not in request.files:
-        flash("No file uploaded.", "danger")
+        flash("No file uploaded. Please select an image.", "danger")
         return redirect(url_for("scan"))
         
     file = request.files["image"]

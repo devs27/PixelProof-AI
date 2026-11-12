@@ -8,41 +8,48 @@
   </div>
   <h1 class="hero-title">Autonomous Deepfake &amp; Synthetic Media Defense</h1>
   <p class="hero-subtitle">
-    Upload any image or choose a pre-loaded sample below to analyze spatial frequencies, detect generative artifacts, and preview automated quarantine watermarking in real time.
+    Upload any image or choose an instant test preset below to evaluate spatial frequencies, detect generative artifacts, and preview automated quarantine watermarking in real time.
   </p>
 </div>
 
 <div class="scan-grid">
-  <!-- Left Column: Upload & Presets -->
+  <!-- Left Column: Upload Target & Presets -->
   <div class="panel">
     <div class="panel-header">
       <span class="panel-icon">↑</span>
       <h2>IMAGE INGESTION TARGET</h2>
     </div>
+    
     <div class="panel-body">
       <form id="scan-form" method="POST" action="{{ url_for('scan') }}" enctype="multipart/form-data">
         
         <!-- Drag & Drop Zone -->
         <div class="drop-zone" id="drop-zone">
           <input type="file" name="image" id="file-input" accept=".jpg,.jpeg,.png,.webp" required/>
-          <div class="drop-zone-icon">🛡️</div>
+          <div class="drop-zone-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2 2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </div>
           <h3>DRAG &amp; DROP IMAGE HERE</h3>
           <p>or click to browse from your device</p>
-          <p class="mono dim" style="font-size:10px; margin-top:8px">Supports JPG, PNG, WEBP · Max 16 MB</p>
+          <p class="mono" style="font-size:10px; color:var(--text-dim); margin-top:8px">Supports JPG, PNG, WEBP · Max 16 MB</p>
         </div>
 
-        <!-- Selected Preview Card -->
-        <div id="preview-wrap" class="scan-preview-card hidden">
-          <img id="preview-img" class="scan-preview-img" src="" alt="Selected Target"/>
+        <!-- Selected Preview Card (Strictly Hidden by Default) -->
+        <div id="preview-wrap" class="scan-preview-card" style="display: none;">
+          <img id="preview-img" class="scan-preview-img" style="display:none;"/>
           <div class="scan-preview-meta">
             <span id="preview-name" class="mono">file.jpg</span>
-            <button type="button" class="btn-outline" style="padding:2px 8px; font-size:10px;" onclick="resetFileInput()">✕ CHANGE</button>
+            <button type="button" class="btn-outline" style="padding:2px 8px; font-size:10px;" onclick="resetFileInput()">✕ CHANGE TARGET</button>
           </div>
         </div>
 
-        <!-- Sample Presets -->
+        <!-- One-Click Presets -->
         <div style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--border);">
-          <div style="font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--text-dim); margin-bottom:8px; display:flex; justify-content:space-between;">
+          <div style="font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--text-dim); margin-bottom:10px; display:flex; justify-content:space-between;">
             <span>⚡ ONE-CLICK TEST PRESETS:</span>
             <span style="color:var(--accent);">CLICK TO LOAD</span>
           </div>
@@ -50,19 +57,23 @@
           <div class="sample-presets-grid">
             <!-- Deepfake Preset -->
             <div class="sample-card" onclick="loadSample('deepfake')">
-              <img src="{{ url_for('static', filename='samples/sample_deepfake.jpg') }}" class="sample-thumb" alt="Deepfake Thumbnail"/>
+              <div class="sample-icon-wrap" style="color:var(--danger); border-color:rgba(255, 51, 102, 0.3);">
+                ⚠
+              </div>
               <div class="sample-info">
-                <span class="sample-title" style="color:var(--danger)">⚠ Deepfake Sample</span>
-                <span class="sample-desc">Synthetic Artifacts</span>
+                <span class="sample-title" style="color:var(--danger)">Deepfake Sample</span>
+                <span class="sample-desc">Central Generative Artifacts</span>
               </div>
             </div>
 
             <!-- Authentic Preset -->
             <div class="sample-card" onclick="loadSample('authentic')">
-              <img src="{{ url_for('static', filename='samples/sample_authentic.jpg') }}" class="sample-thumb" alt="Authentic Thumbnail"/>
+              <div class="sample-icon-wrap" style="color:var(--safe); border-color:rgba(0, 230, 118, 0.3);">
+                ✓
+              </div>
               <div class="sample-info">
-                <span class="sample-title" style="color:var(--safe)">✓ Authentic Sample</span>
-                <span class="sample-desc">Natural Sensor Noise</span>
+                <span class="sample-title" style="color:var(--safe)">Authentic Sample</span>
+                <span class="sample-desc">Natural Optical Sensor Noise</span>
               </div>
             </div>
           </div>
@@ -71,13 +82,13 @@
         <!-- Submit Button -->
         <button type="submit" class="btn-primary full-width" id="scan-btn" style="margin-top:20px" disabled>
           <span id="btn-text">⚡ INITIATE FORENSIC SCAN</span>
-          <span id="btn-loading" class="hidden">◌ SCANNING &amp; ANALYZING PATCHES…</span>
+          <span id="btn-loading" style="display:none;">◌ SCANNING &amp; ANALYZING PATCHES…</span>
         </button>
       </form>
     </div>
   </div>
 
-  <!-- Right Column: Model Specs & Pipeline -->
+  <!-- Right Column: Engine Specs & Pipeline -->
   <div>
     <div class="panel" style="margin-bottom: 20px;">
       <div class="panel-header">
@@ -106,7 +117,7 @@
           <span class="info-val warn">≥ 90.0% CONFIDENCE</span>
         </div>
         <div class="info-row">
-          <span class="info-label">LOCK ENFORCEMENT</span>
+          <span class="info-label">QUARANTINE ENFORCEMENT</span>
           <span class="info-val danger">HTTP 403 Forbidden + Watermark</span>
         </div>
       </div>
@@ -145,6 +156,7 @@ async function loadSample(type) {
   
   try {
     const response = await fetch(url);
+    if (!response.ok) throw new Error("Sample file not found");
     const blob = await response.blob();
     const fname = type === 'deepfake' ? 'sample_deepfake_target.jpg' : 'sample_authentic_target.jpg';
     const file = new File([blob], fname, { type: 'image/jpeg' });
@@ -156,14 +168,15 @@ async function loadSample(type) {
     fileInput.dispatchEvent(new Event('change', { bubbles: true }));
   } catch (err) {
     console.error("Failed to load sample preset:", err);
+    alert("Could not load sample file. Please upload an image directly from your device.");
   }
 }
 
 function resetFileInput() {
   const fileInput = document.getElementById('file-input');
   fileInput.value = '';
-  document.getElementById('preview-wrap').classList.add('hidden');
-  document.getElementById('drop-zone').classList.remove('hidden');
+  document.getElementById('preview-wrap').style.display = 'none';
+  document.getElementById('drop-zone').style.display = 'block';
   document.getElementById('scan-btn').disabled = true;
 }
 </script>

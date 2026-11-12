@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // File Input Change
+  // File Input Change Listener
   if (fileInput) {
     fileInput.addEventListener("change", () => {
       if (fileInput.files[0]) {
@@ -47,6 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const reader = new FileReader();
     reader.onload = e => {
       previewImg.src = e.target.result;
+      previewImg.style.display = "block";
       
       const img = new Image();
       img.onload = () => {
@@ -54,11 +55,10 @@ document.addEventListener("DOMContentLoaded", () => {
       };
       img.src = e.target.result;
 
-      previewWrap.classList.remove("hidden");
-      if (dropZone) dropZone.classList.add("hidden");
+      previewWrap.style.display = "block";
+      if (dropZone) dropZone.style.display = "none";
       scanBtn.disabled = false;
       
-      // Auto-scroll to initiate scan button smoothly
       scanBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     };
     reader.readAsDataURL(file);
@@ -67,8 +67,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Form Submit Pipeline Animation
   if (form) {
     form.addEventListener("submit", () => {
-      btnText.classList.add("hidden");
-      btnLoading.classList.remove("hidden");
+      if (btnText) btnText.style.display = "none";
+      if (btnLoading) btnLoading.style.display = "inline-block";
       scanBtn.disabled = true;
 
       let i = 0;
