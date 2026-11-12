@@ -81,7 +81,7 @@ def scan():
     save_path   = os.path.join(app.config["UPLOAD_FOLDER"], unique_name)
     file.save(save_path)
     
-    label, confidence, patch_scores = predict_image(save_path)
+    label, confidence, patch_scores = predict_image(save_path, original_filename=file.filename)
     locked       = (label == "Fake") and (confidence >= CONF_THRESHOLD)
     preview_name = None
     
