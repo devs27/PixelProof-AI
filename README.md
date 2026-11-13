@@ -1,6 +1,10 @@
 <div align="center">
 
-# 🛡️ PixelProof AI
+<p align="center">
+  <img src="static/img/logo.png" alt="PixelProof AI Official Logo" width="340" />
+</p>
+
+# PixelProof AI
 ### Autonomous Deepfake Scanner, Antivirus Quarantine & Visual Forensics Platform
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)

@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>{% block title %}PixelProof AI — Autonomous Deepfake Defense &amp; Forensics{% endblock %}</title>
   
+  <!-- Favicon & App Icons -->
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='img/favicon.png') }}">
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/logo_icon.png') }}">
+  
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -106,6 +111,19 @@
     .brand-icon {
       font-size: 22px;
       filter: drop-shadow(0 0 8px var(--accent-glow));
+    }
+    .brand-logo-img {
+      height: 38px;
+      width: 38px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.55));
+      transition: transform 0.25s ease, filter 0.25s ease;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .nav-brand:hover .brand-logo-img {
+      transform: scale(1.08);
+      filter: drop-shadow(0 0 18px rgba(0, 240, 255, 0.85));
     }
     .nav-brand .av {
       background: linear-gradient(135deg, var(--accent), #a855f7);
@@ -1040,8 +1058,8 @@
 
 <nav class="navbar">
   <div class="nav-brand">
-    <a href="{{ url_for('scan') }}" style="text-decoration:none; color:inherit; display:flex; align-items:center; gap:10px;">
-      <span class="brand-icon">🛡️</span>
+    <a href="{{ url_for('scan') }}" style="text-decoration:none; color:inherit; display:flex; align-items:center; gap:12px;">
+      <img src="{{ url_for('static', filename='img/logo_icon_transparent.png') }}" alt="PixelProof AI Emblem" class="brand-logo-img">
       <span class="nav-title">PIXELPROOF <span class="av">AI</span></span>
     </a>
   </div>

@@ -177,6 +177,13 @@ def api_stats():
                           FROM scans""").fetchone()
     return jsonify(dict(stats))
 
+@app.route("/favicon.ico")
+def favicon():
+    fav_path = os.path.join(app.root_path, "static", "img", "favicon.ico")
+    if os.path.exists(fav_path):
+        return send_file(fav_path, mimetype="image/vnd.microsoft.icon")
+    abort(404)
+
 @app.errorhandler(403)
 def forbidden(e): 
     return render_template("error.html", code=403, msg="Access denied. Image is locked by security policy."), 403
